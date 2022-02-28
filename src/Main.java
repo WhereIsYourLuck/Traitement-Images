@@ -11,7 +11,20 @@ public class Main {
     public static void main(String[] args) {
         //Viewer2D.exec(lectureImage("D:\\Desktop\\lenaB.png"));
         //Viewer2D.exec(filtreMedian(lectureImage("D:\\Desktop\\lenaB.png")));
-        histogramme(lectureImage("Images\\motos\\001.jpg"));
+        Image test = lectureImage("D:\\Desktop\\lenaB.png");
+        Image testMedian = filtreMedian(test);
+
+        double[][] histogramme = histogramme(testMedian);
+        double[][] dHisto = discretiserHistogramme(histogramme);
+        double[][] dHisto1 = discretiserHistogramme(dHisto);
+        double[][] dHisto2 = discretiserHistogramme(dHisto1);
+        double[][] dHisto3 = discretiserHistogramme(dHisto2);
+        double[][] dHisto4 = discretiserHistogramme(dHisto3);
+        double[][] norm = normaliserHistogramme(dHisto4, testMedian);
+        //Viewer2D.exec(test);
+        //Viewer2D.exec(testMedian);
+        System.out.println(histogramme);
+
     }
 
     public static Image lectureImage(String lien){
@@ -66,12 +79,37 @@ public class Main {
                 }
             }
         }
-        try {
-            for(int i = 0; i < img.getBDim() ; i++)
-            HistogramTools.plotHistogram(histo[i]);
-        } catch (IOException e) {
-            System.err.println("Erreur lors de l'affichage : " + e);
-        }
+        //try {
+        //    for(int i = 0; i < img.getBDim() ; i++)
+        //    HistogramTools.plotHistogram(histo[i]);
+        //} catch (IOException e) {
+        //    System.err.println("Erreur lors de l'affichage : " + e);
+        //}
         return histo;
+    }
+
+    public static double[][] discretiserHistogramme(double[][] histogramme){
+        double[][] nouveauHistogramme = new double[histogramme.length][histogramme[0].length / 2];
+        for(int i = 0 ; i < nouveauHistogramme.length; i++){
+                for(int y = 0 ; y < nouveauHistogramme[0].length ; y++){
+                    nouveauHistogramme[i][y] = histogramme[i][y * 2] + histogramme[i][y * 2 + 1];
+                }
+        }
+        return nouveauHistogramme;
+    }
+
+    public static double[][] normaliserHistogramme(double [][] histogramme, Image img){
+        int longueur = img.getXDim();
+        int largeur = img.getYDim();
+        int pixels = longueur * largeur;
+        for(int i = 0 ; i < histogramme.length; i++){
+            for(int y = 0 ; y < histogramme[0].length ; y++) {
+                histogramme[i][y] = (histogramme[i][y] / pixels) * 100;
+            }
+        }
+        return histogramme;
+    }
+    public static int similariteHistogramme(double[][] h1, double[][] h2){
+        return 0;
     }
 }
