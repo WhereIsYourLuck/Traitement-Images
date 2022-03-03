@@ -3,30 +3,39 @@ import fr.unistra.pelican.Image;
 import fr.unistra.pelican.algorithms.io.ImageLoader;
 import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        //Viewer2D.exec(lectureImage("D:\\Desktop\\lenaB.png"));
-        //Viewer2D.exec(filtreMedian(lectureImage("D:\\Desktop\\lenaB.png")));
-        Image test = lectureImage("D:\\Desktop\\lenaB.png");
-        Image testMedian = filtreMedian(test);
+        Scanner entree = new Scanner(System.in);
+        String dossierImage;
+        String imageRef;
+        System.out.println("Veuillez-entrer le lien absolu du dossier contenant les images :");
+        dossierImage = entree.next();
+        System.out.println(dossierImage);
+        System.out.println("Veuillez-entrer le lien absolu de l\'image de référence :");
+        imageRef = entree.next();
 
-        double[][] histogramme = histogramme(testMedian);
-        double[][] dHisto = discretiserHistogramme(histogramme);
-        double[][] dHisto1 = discretiserHistogramme(dHisto);
-        double[][] dHisto2 = discretiserHistogramme(dHisto1);
-        double[][] dHisto3 = discretiserHistogramme(dHisto2);
-        double[][] dHisto4 = discretiserHistogramme(dHisto3);
-        double[][] norm = normaliserHistogramme(dHisto4, testMedian);
-        //Viewer2D.exec(test);
-        //Viewer2D.exec(testMedian);
-        System.out.println(histogramme);
-
+        File repertoire = new File(dossierImage);
+        File[] listeFile = repertoire.listFiles();
+        for(int i = 0 ; i < listeFile.length ; i++){
+            if(imageRef.equals(listeFile[i].getAbsolutePath())){
+                listeFile[i].delete();
+            }
+            Image test = lectureImage(listeFile[i].getAbsolutePath());
+            Image testMedian = filtreMedian(test);
+            double[][] ok = histogramme(testMedian);
+            double[][] ok2 = discretiserHistogramme(ok);
+            double[][] ok3 = discretiserHistogramme(ok2);
+            double[][] ok4 = discretiserHistogramme(ok3);
+            double[][] norm = normaliserHistogramme(ok4, test);
+            System.out.println(similariteHistogramme(norm, norm));
+        }
     }
-
     public static Image lectureImage(String lien){
         return ImageLoader.exec(lien);
     }
@@ -79,12 +88,12 @@ public class Main {
                 }
             }
         }
-        //try {
-        //    for(int i = 0; i < img.getBDim() ; i++)
-        //    HistogramTools.plotHistogram(histo[i]);
-        //} catch (IOException e) {
-        //    System.err.println("Erreur lors de l'affichage : " + e);
-        //}
+//        try {
+//            for(int i = 0; i < img.getBDim() ; i++)
+//            HistogramTools.plotHistogram(histo[i]);
+//        } catch (IOException e) {
+//            System.err.println("Erreur lors de l'affichage : " + e);
+//        }
         return histo;
     }
 
@@ -109,7 +118,28 @@ public class Main {
         }
         return histogramme;
     }
-    public static int similariteHistogramme(double[][] h1, double[][] h2){
-        return 0;
+    public static double similariteHistogramme(double[][] h1, double[][] h2) {
+        double distanceR = 0;
+        double distanceG = 0;
+        double distanceB = 0;
+
+        for (int i = 0; i < h1.length; i++) {
+            for (int y = 0; y < h1[i].length; y++) {
+                double h1BarreHauteur = h1[i][y];
+                double h2BarreHauteur = h2[i][y];
+                switch(i){
+                    case (0):
+                        distanceR+= Math.pow((h1BarreHauteur - h2BarreHauteur), 2);
+                        break;
+                    case (1):
+                        distanceG+= Math.pow((h1BarreHauteur - h2BarreHauteur), 2);
+                        break;
+                    case (2):
+                        distanceB+= Math.pow((h1BarreHauteur - h2BarreHauteur), 2);
+                        break;
+                }
+            }
+        }
+        return (Math.sqrt(distanceR) + Math.sqrt(distanceG) + Math.sqrt(distanceB));
     }
 }
