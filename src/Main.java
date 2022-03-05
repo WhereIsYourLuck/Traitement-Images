@@ -10,15 +10,13 @@ import java.util.*;
 
 public class Main {
 
-    private static Map mapTriee = new TreeMap<Double, Image>();
-    /*
-    * 3 discretisations = 32 barres de 8 valeurs
-    * 4 discretisations = 16 barres de 16 valeurs
-    * 5 discretisations = 8 barres de 32 valeurs -- Ce raproche plus du ratio du prof de 10 barres de 25 valeurs
-    * */
+    private static Map mapTriee = new TreeMap<Double, Image>(); //Range les images grâce à leurs similarités à l'image donnée
 
-    private static ArrayList<File> images = new ArrayList<File>();
+    private static ArrayList<File> images = new ArrayList<File>(); //Listes de toutes les images en bdd à traiter
     public static void main(String[] args) {
+        /**
+         * Traite les informations de l'utilisateurs et simule la BDD d'images que l'on possède
+         */
         Scanner entree = new Scanner(System.in);
         String dossierImage;
         String imageRef;
@@ -28,16 +26,20 @@ public class Main {
         System.out.println("Veuillez-entrer le lien absolu de l\'image de référence :");
         imageRef = entree.next();
 
+
+        /**
+         * Traitement de la première image de l'utilisateur en amont des images de la BBD
+         */
         Image testRef = lectureImage(imageRef);
         Image testMedianRef = filtreMedian(testRef);
 
         double[][] ref0 = histogramme(testMedianRef);
         double[][] ref1 = discretiserHistogramme(ref0);
-        double[][] ref2 = discretiserHistogramme(ref1); // Meilleur resul avec 2 & 3 discretisations
+        //double[][] ref2 = discretiserHistogramme(ref1); // Meilleur resultat avec 2 & 3 discretisations
         //double[][] ref3 = discretiserHistogramme(ref2);
         //double[][] ref4 = discretiserHistogramme(ref3);
         //double[][] ref5 = discretiserHistogramme(ref4);
-        double[][] normRef = normaliserHistogramme(ref2, testRef);
+        double[][] normRef = normaliserHistogramme(ref1, testRef);
         //mapTriee.put(similariteHistogramme(normRef, normRef), testRef);
 
         /*try {
@@ -46,7 +48,9 @@ public class Main {
         } catch (IOException e) {
             System.err.println("Erreur lors de l'affichage : " + e);
         }*/
-
+        /**
+         * Traitement des images de la BDD une à une de la même manière que l'image de référence
+         */
         File repertoire = new File(dossierImage);
         File[] listeFile = repertoire.listFiles();
         for (int i = 0; i < listeFile.length; ++i) {
@@ -57,32 +61,47 @@ public class Main {
             Image testMedian = filtreMedian(test);
             double[][] ok = histogramme(testMedian);
             double[][] ok2 = discretiserHistogramme(ok);
-            double[][] ok3 = discretiserHistogramme(ok2);
+            //double[][] ok3 = discretiserHistogramme(ok2);
             //double[][] ok4 = discretiserHistogramme(ok3);
             //double[][] ok5 = discretiserHistogramme(ok4);
             //double[][] ok6 = discretiserHistogramme(ok5);
-            double[][] norm = normaliserHistogramme(ok3, test);
+            double[][] norm = normaliserHistogramme(ok2, test);
             mapTriee.put(similariteHistogramme(norm, normRef), test);
         }
-        Set<Double> keys = mapTriee.keySet();
-        ArrayList<Double> ok = new ArrayList<>();
+        Set<Double> keys = mapTriee.keySet(); // Return en Set qu'on ne peut qu'itérer = pose problème lorsque qu'on récupérer que les 10 première images
+        ArrayList<Double> ok = new ArrayList<>(); //Ranger les keys des images de la tree dans un Array qu'on peut intérer
         for (Double key : keys) {
             ok.add(key);
         }
         for(int i = 0 ; i < 10 ; i++){
-            Viewer2D.exec((Image) mapTriee.get(ok.get(i)));
+            Viewer2D.exec((Image) mapTriee.get(ok.get(i))); //Affichage des 10 premières images qui correspondent le plus avec l'img de Ref
         }
     }
-    public static Image lectureImage(String lien){
-        return ImageLoader.exec(lien);
+
+    /**
+     *
+     * @param lienImage
+     *      Permet de charger une image sur laquelle on va travailler
+     * @return Image chargée par la classe ImageLoader
+     */
+    public static Image lectureImage(String lienImage){
+        return ImageLoader.exec(lienImage);
     }
 
+    /**
+     *
+     * @param img Une image chargée
+     *      Cette fonction permet de débruiter une image avec l'algorithme du filtre médian + efficace que le filtre moyen
+     *      Le contour sur 1 pixel de taille de l'image n'est pas débruité pour le bien de l'algorithme
+     * @return L'image en plus net
+     */
     public static Image filtreMedian(Image img) {
         ByteImage resultat = new ByteImage(img);
         ArrayList<Integer> mediane = new ArrayList<Integer>();
         for (int x = 1; x < img.getXDim() -1; x++) {
             for (int y = 1; y < img.getYDim() -1; y++) {
                 for (int z = 0; z < img.getBDim(); z++) {
+                    //Range les 8 pixels autour du pixel à traiter dans le traitement de la médianne || Donné dans la fonction de base
                     mediane.add(img.getPixelXYBByte(x, y, z));
                     mediane.add(img.getPixelXYBByte(x +1, y, z));
                     mediane.add(img.getPixelXYBByte(x +1, y +1, z));
@@ -92,8 +111,9 @@ public class Main {
                     mediane.add(img.getPixelXYBByte(x -1, y +1, z));
                     mediane.add(img.getPixelXYBByte(x + 1, y - 1, z));
                     mediane.add(img.getPixelXYBByte(x, y + 1, z));
-                    Collections.sort(mediane);
+                    Collections.sort(mediane); //Trie nécessaire pour avoir la médiane des 9 points
                     int color;
+                    //Mediane consiste à diviser en 2 groupes de valeurs le plus égaux possible ; Traitement nécessaire si la liste est paire
                     if (mediane.size() % 2 == 1) {
                         color = mediane.get(mediane.size()/2);
                     } else {
@@ -107,7 +127,12 @@ public class Main {
         return resultat;
     }
 
-    /// Histogramme
+    /**
+     *
+     * @param img Prend l'image sur laquelle on va construire
+     *            Fonction qui s'adapte, peut construire l'histogramme d'une image en couleur RGB ou même en gris
+     * @return Histogramme sur toutes les dimensions de couleurs de l'image
+     */
     public static double[][] histogramme(Image img) {
 
         double[][] histo = new double[img.getBDim()][256];
@@ -125,6 +150,7 @@ public class Main {
                 }
             }
         }
+        //Affichage des histogrammes
 //        try {
 //            for(int i = 0; i < img.getBDim() ; i++)
 //            HistogramTools.plotHistogram(histo[i]);
@@ -134,6 +160,15 @@ public class Main {
         return histo;
     }
 
+    /**
+     *
+     * @param histogramme
+     *      Fonction qui permet de discréstiser un histogramme ; Simplifie le traitement de l'histogramme d'une image
+     *      Problème de cette fonction, c'est que l'on ne peut pas la répéter, on doit refaire appel à celle-ci pour discrétiser une seconde fois ect
+     *      1ère discrétisation 128 barres de 2 valeurs -> 2ème 64 barres de 4 -> 3ème 32 barres de 8 -> 4ème 16 barres de 16 valeurs -> 5ème 8 barres de 32 valeurs
+     *      Affecte la précision de la l'algorithme de reconnaissance d'images similaires
+     * @return Histogramme "simplifié" par 2
+     */
     public static double[][] discretiserHistogramme(double[][] histogramme){
         double[][] nouveauHistogramme = new double[histogramme.length][histogramme[0].length / 2];
         for(int i = 0 ; i < nouveauHistogramme.length; i++){
@@ -145,7 +180,14 @@ public class Main {
         return nouveauHistogramme;
     }
 
-
+    /**
+     *
+     * @param histogramme de l'image
+     * @param img pour récupérer ses dimensions
+     *      Après discrétisation, il est nécessaire d'obtenir un diagramme fait de pourcentages
+     *            -> Savoir quel niveau de couleur est le plus représenté dans l'image en pourcentage
+     * @return Un histogramme en pourcentage
+     */
     public static double[][] normaliserHistogramme(double [][] histogramme, Image img){
         int longueur = img.getXDim();
         int largeur = img.getYDim();
@@ -157,6 +199,14 @@ public class Main {
         }
         return histogramme;
     }
+
+    /**
+     *
+     * @param h1 Histogramme normalisé de l'image à traiter
+     * @param h2 Histogramme normalisé de l'image de référence : Celle que donne l'utilisateur
+     *           Résultat : Plus le résultat est petit + l'image est resemble à la première
+     * @return Double représentation une similarité entre 2 images
+     */
     public static double similariteHistogramme(double[][] h1, double[][] h2) {
         double distanceR = 0;
         double distanceG = 0;
