@@ -5,11 +5,19 @@ import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Scanner;
+import java.sql.Array;
+import java.util.*;
 
 public class Main {
+
+    private static Map mapTriee = new TreeMap<Double, Image>();
+    /*
+    * 3 discretisations = 32 barres de 8 valeurs
+    * 4 discretisations = 16 barres de 16 valeurs
+    * 5 discretisations = 8 barres de 32 valeurs -- Ce raproche plus du ratio du prof de 10 barres de 25 valeurs
+    * */
+
+    private static ArrayList<File> images = new ArrayList<File>();
     public static void main(String[] args) {
         Scanner entree = new Scanner(System.in);
         String dossierImage;
@@ -20,20 +28,49 @@ public class Main {
         System.out.println("Veuillez-entrer le lien absolu de l\'image de référence :");
         imageRef = entree.next();
 
+        Image testRef = lectureImage(imageRef);
+        Image testMedianRef = filtreMedian(testRef);
+
+        double[][] ref0 = histogramme(testMedianRef);
+        double[][] ref1 = discretiserHistogramme(ref0);
+        double[][] ref2 = discretiserHistogramme(ref1); // Meilleur resul avec 2 & 3 discretisations
+        //double[][] ref3 = discretiserHistogramme(ref2);
+        //double[][] ref4 = discretiserHistogramme(ref3);
+        //double[][] ref5 = discretiserHistogramme(ref4);
+        double[][] normRef = normaliserHistogramme(ref2, testRef);
+        //mapTriee.put(similariteHistogramme(normRef, normRef), testRef);
+
+        /*try {
+            for(int i = 0; i < ref5.length ; i++)
+                HistogramTools.plotHistogram(ref5[i]);
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'affichage : " + e);
+        }*/
+
         File repertoire = new File(dossierImage);
         File[] listeFile = repertoire.listFiles();
-        for(int i = 0 ; i < listeFile.length ; i++){
-            if(imageRef.equals(listeFile[i].getAbsolutePath())){
-                listeFile[i].delete();
+        for (int i = 0; i < listeFile.length; ++i) {
+            if (imageRef.equals(listeFile[i].getAbsolutePath())) {
+                continue;
             }
             Image test = lectureImage(listeFile[i].getAbsolutePath());
             Image testMedian = filtreMedian(test);
             double[][] ok = histogramme(testMedian);
             double[][] ok2 = discretiserHistogramme(ok);
             double[][] ok3 = discretiserHistogramme(ok2);
-            double[][] ok4 = discretiserHistogramme(ok3);
-            double[][] norm = normaliserHistogramme(ok4, test);
-            System.out.println(similariteHistogramme(norm, norm));
+            //double[][] ok4 = discretiserHistogramme(ok3);
+            //double[][] ok5 = discretiserHistogramme(ok4);
+            //double[][] ok6 = discretiserHistogramme(ok5);
+            double[][] norm = normaliserHistogramme(ok3, test);
+            mapTriee.put(similariteHistogramme(norm, normRef), test);
+        }
+        Set<Double> keys = mapTriee.keySet();
+        ArrayList<Double> ok = new ArrayList<>();
+        for (Double key : keys) {
+            ok.add(key);
+        }
+        for(int i = 0 ; i < 10 ; i++){
+            Viewer2D.exec((Image) mapTriee.get(ok.get(i)));
         }
     }
     public static Image lectureImage(String lien){
@@ -104,8 +141,10 @@ public class Main {
                     nouveauHistogramme[i][y] = histogramme[i][y * 2] + histogramme[i][y * 2 + 1];
                 }
         }
+
         return nouveauHistogramme;
     }
+
 
     public static double[][] normaliserHistogramme(double [][] histogramme, Image img){
         int longueur = img.getXDim();
