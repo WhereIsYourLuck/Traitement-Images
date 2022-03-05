@@ -55,7 +55,7 @@ public class Main {
         File[] listeFile = repertoire.listFiles();
         for (int i = 0; i < listeFile.length; ++i) {
             if (imageRef.equals(listeFile[i].getAbsolutePath())) {
-                continue;
+                continue; //Si l'image de référence fait partie des images de la BDD, on ne la traite pas pour éviter la comparaison à elle-même
             }
             Image test = lectureImage(listeFile[i].getAbsolutePath());
             Image testMedian = filtreMedian(test);
