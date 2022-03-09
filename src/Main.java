@@ -4,14 +4,14 @@ import fr.unistra.pelican.algorithms.io.ImageLoader;
 import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Array;
 import java.util.*;
 
 public class Main {
 
-    private static Map mapTriee = new TreeMap<Double, Image>(); //Range les images grâce à leurs similarités à l'image donnée
-
+    private static Map mapTriee = new TreeMap<Double, Image>(); //Range les images grâce à leurs similarités à l'image données
     private static ArrayList<File> images = new ArrayList<File>(); //Listes de toutes les images en bdd à traiter
     public static void main(String[] args) {
         /**
@@ -26,21 +26,19 @@ public class Main {
         System.out.println("Veuillez-entrer le lien absolu de l\'image de référence :");
         imageRef = entree.next();
 
-
         /**
          * Traitement de la première image de l'utilisateur en amont des images de la BBD
          */
         Image testRef = lectureImage(imageRef);
+        int ok3 = testRef.getBDim();
         Image testMedianRef = filtreMedian(testRef);
 
         double[][] ref0 = histogramme(testMedianRef);
         double[][] ref1 = discretiserHistogramme(ref0);
-        //double[][] ref2 = discretiserHistogramme(ref1); // Meilleur resultat avec 2 & 3 discretisations
-        //double[][] ref3 = discretiserHistogramme(ref2);
-        //double[][] ref4 = discretiserHistogramme(ref3);
-        //double[][] ref5 = discretiserHistogramme(ref4);
         double[][] normRef = normaliserHistogramme(ref1, testRef);
-        //mapTriee.put(similariteHistogramme(normRef, normRef), testRef);
+        mapTriee.put(similariteHistogramme(normRef, normRef), testRef);
+
+
 
         /*try {
             for(int i = 0; i < ref5.length ; i++)
@@ -73,7 +71,8 @@ public class Main {
         for (Double key : keys) {
             ok.add(key);
         }
-        for(int i = 0 ; i < 10 ; i++){
+        for(int i = 1 ; i < 11 ; i++){
+            System.out.println(ok.get(i));
             Viewer2D.exec((Image) mapTriee.get(ok.get(i))); //Affichage des 10 premières images qui correspondent le plus avec l'img de Ref
         }
     }
